@@ -83,6 +83,7 @@ class OskudeMuzakLister extends HTMLElement
 
 		edi.subscribe("play.next", this.selectNext.bind(this));
 		edi.subscribe("play.prev", this.selectPrev.bind(this));
+		edi.subscribe("remove.track", this.removeTrack.bind(this));
 	}
 
 	search ()

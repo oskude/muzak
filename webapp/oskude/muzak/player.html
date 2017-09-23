@@ -96,7 +96,7 @@ class OskudeMuzakPlayer extends HTMLElement
 			api.deleteJson("/audio", {
 				id: this.currentTrack.id
 			}).then((x)=>{
-				this.lister.removeTrack(this.currentTrack.listerId);
+				edi.trigger("remove.track", this.currentTrack.listerId);
 			}).catch((o)=>{
 				console.error("todo 123 error", o);
 			});
