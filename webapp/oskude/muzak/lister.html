@@ -48,6 +48,7 @@ so, how can we indent our template, but not have trash in node tree?
 
 <script type="module">
 import {api} from "/oskude/muzak/api.js";
+import {edi} from "/oskude/muzak/edi.js";
 
 class OskudeMuzakLister extends HTMLElement
 {
@@ -79,6 +80,9 @@ class OskudeMuzakLister extends HTMLElement
 	{
 		this.rootUrl = window.location.origin;
 		this.searchButton.addEventListener("click", this.search.bind(this));
+
+		edi.subscribe("play.next", this.selectNext.bind(this));
+		edi.subscribe("play.prev", this.selectPrev.bind(this));
 	}
 
 	search ()
@@ -148,11 +152,6 @@ class OskudeMuzakLister extends HTMLElement
 		this.select();
 	}
 
-	set player (player)
-	{
-		this.player = player;
-	}
-
 	handleRowClick (e)
 	{
 		this.currentPos = e.currentTarget.dataset.playListPos;
@@ -161,7 +160,7 @@ class OskudeMuzakLister extends HTMLElement
 
 	select ()
 	{
-		this.player.track = this.playList.get(this.currentPos);
+		edi.trigger("play.new", this.playList.get(this.currentPos));
 
 		if (this.selectedElem) {
 			this.selectedElem.classList.remove("selected");

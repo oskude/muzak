@@ -27,6 +27,7 @@
 
 <script type="module">
 import {api} from "/oskude/muzak/api.js";
+import {edi} from "/oskude/muzak/edi.js";
 
 class OskudeMuzakPlayer extends HTMLElement
 {
@@ -56,9 +57,10 @@ class OskudeMuzakPlayer extends HTMLElement
 		this.prevElem.addEventListener("click", this.selectPrevTrack.bind(this));
 		this.nextElem.addEventListener("click", this.selectNextTrack.bind(this));
 		this.deleteElem.addEventListener("click", this.deleteTrack.bind(this));
+		edi.subscribe("play.new", this.playNew.bind(this));
 	}
 
-	set track (data)
+	playNew (data)
 	{
 		this.currentTrack = data;
 		this.titleElem.textContent = data.title;
@@ -73,12 +75,12 @@ class OskudeMuzakPlayer extends HTMLElement
 
 	selectPrevTrack ()
 	{
-		this.lister.selectPrev();
+		edi.trigger("play.prev");
 	}
 
 	selectNextTrack ()
 	{
-		this.lister.selectNext();
+		edi.trigger("play.next");
 	}
 
 	deleteTrack ()

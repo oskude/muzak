@@ -12,7 +12,9 @@
 	<oskude-muzak-lister></oskude-muzak-lister>
 </template>
 
-<script>
+<script type="module">
+import {edi} from "/oskude/muzak/edi.js";
+
 class OskudeMuzak extends HTMLElement
 {
 	constructor ()
@@ -23,15 +25,6 @@ class OskudeMuzak extends HTMLElement
 		const template = document.querySelector("#template-oskude-muzak");
 
 		root.appendChild(template.content.cloneNode(true));
-
-		this.player = root.querySelector("oskude-muzak-player");
-		this.lister = root.querySelector("oskude-muzak-lister");
-	}
-
-	connectedCallback ()
-	{
-		this.lister.player = this.player;
-		this.player.lister = this.lister;
 	}
 }
 
