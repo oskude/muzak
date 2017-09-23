@@ -1,0 +1,22 @@
+pkgname=muzak
+pkgver=0.1.0
+pkgrel=1
+pkgdesc="todo"
+arch=('i686' 'x86_64')
+license=('GPLv2')
+source=("git+file:///$(readlink -f ../..)/")
+md5sums=('SKIP')
+backup=(
+	'etc/muzak.conf.json'
+)
+depends=(
+	'nodejs'
+	'sqlite3'
+	'mediainfo'
+)
+
+package() {
+	cd "$pkgname"
+	make PREFIX=/usr DESTDIR="$pkgdir" install
+	install -D -m644 distro/muzak.conf.json "${pkgdir}/etc/muzak.conf.json"
+}

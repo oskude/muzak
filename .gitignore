@@ -1,0 +1,11 @@
+*.conf.json
+*.db
+
+!test/test.conf.json
+
+distro/**
+!distro/muzak.sql
+!distro/muzak.conf.json
+!distro/muzak-server.service
+!distro/archlinux
+!distro/archlinux/PKGBUILD

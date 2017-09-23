@@ -1,0 +1,214 @@
+<template id="template-oskude-muzak-lister">
+	<style>
+		:host {
+			display: flex;
+			flex-direction: column;
+		}
+		#entry-list-container {
+			overflow-y: auto;
+		}
+		#entry-list-table {
+			border-collapse: collapse;
+			width: 100%;
+		}
+		.entry-row {
+			border-bottom-width: 1px;
+			border-bottom-style: solid;
+			/* TODO: can we set currentColor alpha to 0.5 */
+			border-bottom-color: currentColor;
+		}
+		.selected {
+			filter: invert();
+			backdrop-filter: invert(50%);
+		}
+		#results::after {
+			content: " Results"
+		}
+	</style>
+	<div id="search-container">
+		<input id="where-title" type="checkbox"/><label>Title</label>
+		<input id="where-artist" type="checkbox"/><label>Artist</label>
+		<input id="query" type="text"/>
+		<button id="search">Search</button>
+		<label id="results">0</label>
+	</div>
+	<div id="entry-list-container">
+		<table id="entry-list-table" cellpadding="0" cellspacing="0">
+			<tbody id="entry-root"></tbody>
+		</table>
+	<div>
+</template>
+
+<!-- TODO
+if we leave newlines in following template,
+importNode (or something) will literally add newlines as text nodes in dom...
+so, how can we indent our template, but not have trash in node tree?
+-->
+<template id="template-oskude-muzak-lister-entry"><tr class="entry-row"><td class="entry-title"></td><td class="entry-artist"></td></tr></template>
+
+<script type="module">
+import {api} from "/oskude/muzak/api.js";
+
+class OskudeMuzakLister extends HTMLElement
+{
+	constructor ()
+	{
+		super();
+
+		const root = this.attachShadow({mode:"open"});
+		const template = document.querySelector("#template-oskude-muzak-lister");
+
+		root.appendChild(template.content.cloneNode(true));
+
+		this.queryInput = root.querySelector("#query");
+		this.searchButton = root.querySelector("#search");
+		this.whereArtistInput = root.querySelector("#where-artist");
+		this.whereTitleInput = root.querySelector("#where-title");
+		this.entryRoot = root.querySelector("#entry-root");
+		this.entryListContainer = root.querySelector("#entry-list-container");
+		this.results = root.querySelector("#results");
+
+		this.entryTemplate = document.querySelector("#template-oskude-muzak-lister-entry");
+
+		this.selectedElem = null;
+		this.playList = [];
+		this.currentPos = null;
+	}
+
+	connectedCallback ()
+	{
+		this.rootUrl = window.location.origin;
+		this.searchButton.addEventListener("click", this.search.bind(this));
+	}
+
+	search ()
+	{
+		api.getJson("/audio", {
+			fields: ["id","artist","title"],
+			artist: this.whereArtistInput.checked ? this.queryInput.value : '',
+			title: this.whereTitleInput.checked ? this.queryInput.value : ''
+		}).then((x)=>{
+			this.show(x);
+		}).catch((o)=>{
+			console.error("hmmmm", o);
+		});
+	}
+
+	show (data)
+	{
+		this.playList = new Map();
+		this.results.textContent = data.length;
+
+		// DELME: just wanted some variety during early development
+		data.sort(()=>{
+			return (Math.round(Math.random())-0.5)
+		});
+
+		for (let d of data) {
+			this.playList.set(d.id, d);
+		}
+
+		this.showList();
+	}
+
+	showList ()
+	{
+		this.entryRoot.innerHTML = "";
+
+		for (let [k, p] of this.playList) {
+			let cloneElem = document.importNode(this.entryTemplate.content, true);
+			let titleElem = cloneElem.querySelector(".entry-title");
+			let artistElem = cloneElem.querySelector(".entry-artist");
+			let rowElem = cloneElem.querySelector(".entry-row");
+			let url = new URL(this.rootUrl);
+
+			titleElem.textContent = p.title;
+			artistElem.textContent = p.artist;
+
+			url.pathname = "/audio";
+			url.searchParams.set("id", p.id);
+
+			p.href = url.href;
+			p.elem = rowElem;
+			p.listerId = k;
+
+			rowElem.dataset.playListPos = k;
+			rowElem.addEventListener("click", this.handleRowClick.bind(this));
+
+			this.entryRoot.appendChild(cloneElem);
+		}
+	}
+
+	removeTrack (listerId)
+	{
+		let e = this.playList.get(listerId);
+		this.next();
+		e.elem.parentNode.removeChild(e.elem);
+		this.playList.delete(listerId);
+		this.select();
+	}
+
+	set player (player)
+	{
+		this.player = player;
+	}
+
+	handleRowClick (e)
+	{
+		this.currentPos = e.currentTarget.dataset.playListPos;
+		this.select();
+	}
+
+	select ()
+	{
+		this.player.track = this.playList.get(this.currentPos);
+
+		if (this.selectedElem) {
+			this.selectedElem.classList.remove("selected");
+		}
+
+		this.selectedElem = this.playList.get(this.currentPos).elem;
+		this.selectedElem.classList.add("selected");
+
+		let y = this.selectedElem.offsetTop;
+		y -= this.entryListContainer.getBoundingClientRect().height / 2;
+		y += this.selectedElem.offsetHeight;
+		this.entryListContainer.scrollTo(0, y);
+	}
+
+	selectNext ()
+	{
+		this.next();
+		this.select();
+	}
+
+	selectPrev ()
+	{
+		this.prev();
+		this.select();
+	}
+
+	next ()
+	{
+		let next = this.selectedElem.nextElementSibling;
+		if (!next) {
+			next = this.selectedElem.parentNode.firstChild;
+		}
+		this.currentPos = next.dataset.playListPos;
+	}
+
+	prev ()
+	{
+		let prev = this.selectedElem.previousElementSibling;
+		if (!prev) {
+			prev = this.selectedElem.parentNode.lastChild;
+		}
+		this.currentPos = prev.dataset.playListPos;
+	}
+}
+
+window.customElements.define(
+	"oskude-muzak-lister",
+	OskudeMuzakLister
+);
+</script>

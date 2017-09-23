@@ -1,0 +1,9 @@
+[Unit]
+Description=muzak server
+
+[Service]
+WorkingDirectory=/usr/lib/muzak
+ExecStart=/usr/bin/muzak-server
+
+[Install]
+WantedBy=multi-user.target

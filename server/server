@@ -1,0 +1,71 @@
+#!/usr/bin/env node
+const Fs = require("fs");
+const FooServer = require("./lib/server");
+const FooDatabase = require("./lib/database");
+
+const srv = new FooServer("muzak.conf.json");
+const db  = new FooDatabase("muzak.conf.json");
+
+db.addQuery("findAudio", (data)=>{
+	let where = [];
+	let sql = `SELECT ${data.fields.join(",")} FROM audio`;
+	if (data.artist) where.push(`artist LIKE '%${data.artist}%'`);
+	if (data.title) where.push(`title LIKE '%${data.title}%'`);
+	if (where.length > 0) sql += " WHERE " + where.join(" AND ");
+	return sql;
+});
+db.addQuery("getAudioFileById", (id)=>{
+	return `SELECT file FROM audio WHERE id = ${id}`;
+});
+db.addQuery("deleteAudioById", (id)=>{
+	return `DELETE FROM audio where id = ${id}`;
+});
+
+srv.addHandler("GET", "/audio", ["application/json"], (req,res)=>{
+	if (req.params.has("id")) {
+		res.sendJson(501, "Not Implemented");
+	} else {
+		try {
+			let rows = db.getAll("findAudio", {
+				fields: req.params.has("fields") ? req.params.get("fields").split(",") : ["*"],
+				artist: req.params.get("artist"),
+				title: req.params.get("title")
+			});
+			res.sendJson(200, rows);
+		} catch (error) {
+			res.sendJson(500, error);
+		}
+	}
+});
+srv.addHandler("GET", "/audio", ["*/*", "audio/mpeg"], (req,res)=>{
+	try {
+		let row = db.getOne("getAudioFileById", req.params.get("id"));
+		if (Fs.existsSync(row.file) && Fs.statSync(row.file).isFile()) {
+			if (srv.config.debug) console.info("stream >>", row.file);
+			res.response.writeHead(200, {
+				'Content-Type': 'audio/mpeg',
+				'Accept-Ranges': 'bytes',
+				'Content-Length': Fs.statSync(row.file).size
+			});
+			Fs.createReadStream(row.file).pipe(res.response);
+		} else {
+			res.sendJson(404, "Not Found");
+		}
+	} catch (error) {
+		res.sendJson(500, error);
+	}
+});
+srv.addHandler("DELETE", "/audio", ["application/json"], (req,res)=>{
+	try {
+		let id = req.params.get("id");
+		let row = db.getOne("getAudioFileById", id);
+		let del = db.getOne("deleteAudioById", id);
+		if (srv.config.debug) console.info("delete >>", row.file);
+		Fs.unlinkSync(row.file);
+		res.sendJson(200, {id:id});
+	} catch (error) {
+		res.sendJson(500, error);
+	}
+});
+
+srv.start();

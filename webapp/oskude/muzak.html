@@ -1,0 +1,42 @@
+<link rel="import" href="/oskude/muzak/player.html"/>
+<link rel="import" href="/oskude/muzak/lister.html"/>
+
+<template id="template-oskude-muzak">
+	<style>
+		:host {
+			display: flex;
+			flex-direction: column;
+		}
+	</style>
+	<oskude-muzak-player></oskude-muzak-player>
+	<oskude-muzak-lister></oskude-muzak-lister>
+</template>
+
+<script>
+class OskudeMuzak extends HTMLElement
+{
+	constructor ()
+	{
+		super();
+
+		const root = this.attachShadow({mode:"open"});
+		const template = document.querySelector("#template-oskude-muzak");
+
+		root.appendChild(template.content.cloneNode(true));
+
+		this.player = root.querySelector("oskude-muzak-player");
+		this.lister = root.querySelector("oskude-muzak-lister");
+	}
+
+	connectedCallback ()
+	{
+		this.lister.player = this.player;
+		this.player.lister = this.lister;
+	}
+}
+
+window.customElements.define(
+	"oskude-muzak",
+	OskudeMuzak
+);
+</script>

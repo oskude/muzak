@@ -1,0 +1,151 @@
+#!/usr/bin/env node
+const Fs = require("fs");
+const Path = require("path");
+const Cproc = require("child_process");
+const Readline = require("readline");
+const FooDatabase = require("./lib/database");
+
+function AudioScanner (configFile)
+{
+	this.counter = 0;
+	this.skipped = 0;
+	this.db = new FooDatabase(configFile);
+	this.db.addQuery("insertAudio", (info)=>{
+		let sql = [
+			"pragma journal_mode=memory;",
+			"INSERT OR IGNORE INTO audio",
+			"(file, artist, title)",
+			"VALUES",
+			"(",
+			`'${info.file}',`,
+			`'${info.artist}',`,
+			`'${info.title}'`,
+			");"
+		];
+		return sql.join(" ");
+	});
+}
+
+AudioScanner.prototype.replacePrintOneline = function (out, prefix, msg)
+{
+	let space = out.columns - prefix.length;
+
+	Readline.clearLine(out, 0)
+	Readline.cursorTo(out, 0);
+
+	out.write(prefix);
+
+	if (msg.length > space) {
+		out.write("…");
+		out.write(msg.substr(-(space - 1)));
+	} else {
+		out.write(msg);
+	}
+}
+
+AudioScanner.prototype.scan = function (path)
+{
+	this.root = path;
+	this.counter = 0;
+	this.scanDir(path);
+}
+
+AudioScanner.prototype.scanDir = function (path)
+{
+	Fs.readdir(path, (error, files) => {
+		files.forEach((file)=>{
+			let absp = Path.join(path, file);
+			let stat = Fs.statSync(absp);
+			if (stat.isDirectory()) {
+				this.scanDir(absp);
+			}
+			else if (stat.isFile()) {
+				if (Path.extname(absp) === ".mp3") {
+					this.getFileInfo(absp);
+				}
+			}
+		});
+	});
+}
+
+AudioScanner.prototype.getFileInfo = function (path)
+{
+	let info = {
+		title: "",
+		artist: "",
+		file: path
+	}
+
+	++this.counter;
+	this.replacePrintOneline(process.stdout, `### scan ${this.counter} : `, info.file);
+
+	let ret = Cproc.spawnSync("mediainfo", [path], {encoding:"utf8"});
+
+	ret.stdout.split("\n").forEach((line)=>{
+		let row = line.split(":").map((c)=>c.trim());
+		if (row[0] == "Track name") {
+			info.title = row[1];
+		}
+		else if (row[0] == "Performer") {
+			info.artist = row[1];
+		}
+	});
+
+	this.saveFileInfo(info);
+}
+
+AudioScanner.prototype.saveFileInfo = function (info)
+{
+	if (!info.artist || !info.title) {
+		this.skipped++;
+		Readline.clearLine(process.stdout, 0)
+		Readline.cursorTo(process.stdout, 0);
+		console.log(`no artist/title found in '${info.file}'`);
+	} else {
+		this.replacePrintOneline(process.stdout, `### save ${this.counter} : `, info.file);
+		try {
+			this.db.runQuery("insertAudio", info);
+		} catch (error) {
+			Readline.clearLine(process.stdout, 0)
+			Readline.cursorTo(process.stdout, 0);
+			process.stdout.write(`${error}\n`);
+			process.exit(1);
+		}
+	}
+}
+
+AudioScanner.prototype.printStats = function ()
+{
+	Readline.clearLine(process.stdout, 0)
+	Readline.cursorTo(process.stdout, 0);
+	console.log("done.");
+	console.log(`scanned ${this.counter} file(s).`);
+	console.log(`skipped ${this.skipped} file(s).`);
+}
+
+var SCANDIR = process.argv[2];
+if (!SCANDIR) {
+	process.stderr.write("usage: muzak-scan <path>\n");
+	process.exit(1);
+}
+SCANDIR = Path.resolve(SCANDIR);
+if (!Fs.existsSync(SCANDIR)) {
+	process.stderr.write(`exit cause scan directory not found: '${SCANDIR}'\n`);
+	process.exit(1);
+}
+if (!Fs.statSync(SCANDIR).isDirectory()) {
+	process.stderr.write(`exit cause scan directory not directory: '${SCANDIR}'\n`);
+	process.exit(1);
+}
+try {
+	Fs.accessSync(SCANDIR, Fs.constants.R_OK);
+} catch (error) {
+	process.stderr.write(`exit cause scan directory not readable: '${SCANDIR}'\n`);
+	process.exit(1);
+}
+
+const scanner = new AudioScanner("muzak.conf.json");
+scanner.scan(SCANDIR);
+process.on("exit", (code)=>{
+	scanner.printStats();
+});
