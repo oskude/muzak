@@ -57,7 +57,7 @@ class OskudeMuzakPlayer extends HTMLElement
 		this.prevElem.addEventListener("click", this.selectPrevTrack.bind(this));
 		this.nextElem.addEventListener("click", this.selectNextTrack.bind(this));
 		this.deleteElem.addEventListener("click", this.deleteTrack.bind(this));
-		edi.subscribe("play.new", this.playNew.bind(this));
+		edi.subscribe("audio.play.new", this.playNew.bind(this));
 	}
 
 	playNew (data)
@@ -75,12 +75,12 @@ class OskudeMuzakPlayer extends HTMLElement
 
 	selectPrevTrack ()
 	{
-		edi.trigger("play.prev");
+		edi.trigger("audio.play.prev");
 	}
 
 	selectNextTrack ()
 	{
-		edi.trigger("play.next");
+		edi.trigger("audio.play.next");
 	}
 
 	deleteTrack ()
@@ -96,7 +96,7 @@ class OskudeMuzakPlayer extends HTMLElement
 			api.deleteJson("/audio", {
 				id: this.currentTrack.id
 			}).then((x)=>{
-				edi.trigger("remove.track", this.currentTrack.listerId);
+				edi.trigger("playlist.remove.entry", this.currentTrack.listerId);
 			}).catch((o)=>{
 				console.error("todo 123 error", o);
 			});

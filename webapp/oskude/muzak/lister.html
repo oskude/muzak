@@ -65,9 +65,9 @@ class OskudeMuzakLister extends HTMLElement
 	connectedCallback ()
 	{
 		this.rootUrl = window.location.origin;
-		edi.subscribe("play.next", this.selectNext.bind(this));
-		edi.subscribe("play.prev", this.selectPrev.bind(this));
-		edi.subscribe("remove.track", this.removeTrack.bind(this));
+		edi.subscribe("audio.play.next", this.selectNext.bind(this));
+		edi.subscribe("audio.play.prev", this.selectPrev.bind(this));
+		edi.subscribe("playlist.remove.entry", this.removeTrack.bind(this));
 		edi.subscribe("playlist.replace.list", this.show.bind(this));
 	}
 
@@ -132,7 +132,7 @@ class OskudeMuzakLister extends HTMLElement
 
 	select ()
 	{
-		edi.trigger("play.new", this.playList.get(this.currentPos));
+		edi.trigger("audio.play.new", this.playList.get(this.currentPos));
 
 		if (this.selectedElem) {
 			this.selectedElem.classList.remove("selected");
