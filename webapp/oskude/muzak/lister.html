@@ -21,17 +21,7 @@
 			filter: invert();
 			backdrop-filter: invert(50%);
 		}
-		#results::after {
-			content: " Results"
-		}
 	</style>
-	<div id="search-container">
-		<input id="where-title" type="checkbox"/><label>Title</label>
-		<input id="where-artist" type="checkbox"/><label>Artist</label>
-		<input id="query" type="text"/>
-		<button id="search">Search</button>
-		<label id="results">0</label>
-	</div>
 	<div id="entry-list-container">
 		<table id="entry-list-table" cellpadding="0" cellspacing="0">
 			<tbody id="entry-root"></tbody>
@@ -61,10 +51,6 @@ class OskudeMuzakLister extends HTMLElement
 
 		root.appendChild(template.content.cloneNode(true));
 
-		this.queryInput = root.querySelector("#query");
-		this.searchButton = root.querySelector("#search");
-		this.whereArtistInput = root.querySelector("#where-artist");
-		this.whereTitleInput = root.querySelector("#where-title");
 		this.entryRoot = root.querySelector("#entry-root");
 		this.entryListContainer = root.querySelector("#entry-list-container");
 		this.results = root.querySelector("#results");
@@ -79,30 +65,15 @@ class OskudeMuzakLister extends HTMLElement
 	connectedCallback ()
 	{
 		this.rootUrl = window.location.origin;
-		this.searchButton.addEventListener("click", this.search.bind(this));
-
 		edi.subscribe("play.next", this.selectNext.bind(this));
 		edi.subscribe("play.prev", this.selectPrev.bind(this));
 		edi.subscribe("remove.track", this.removeTrack.bind(this));
-	}
-
-	search ()
-	{
-		api.getJson("/audio", {
-			fields: ["id","artist","title"],
-			artist: this.whereArtistInput.checked ? this.queryInput.value : '',
-			title: this.whereTitleInput.checked ? this.queryInput.value : ''
-		}).then((x)=>{
-			this.show(x);
-		}).catch((o)=>{
-			console.error("hmmmm", o);
-		});
+		edi.subscribe("playlist.replace.list", this.show.bind(this));
 	}
 
 	show (data)
 	{
 		this.playList = new Map();
-		this.results.textContent = data.length;
 
 		// DELME: just wanted some variety during early development
 		data.sort(()=>{
