@@ -4,7 +4,6 @@ const Http = require("http");
 const Path = require("path");
 
 const Config = require("./config");
-const RIP = require("./rip");
 
 function FooServer (configFile)
 {
@@ -134,21 +133,15 @@ FooServer.prototype.serveFile = function (req, response)
 		if (this.config.debug) {
 			console.info("res >>", path);
 		}
-		if (req.extension === ".html") {
-			let content = RIP.concat(path);
-			response.writeHead(200, {'Content-Type':req.ctype});
-			response.end(content, "utf-8");
-		} else {
-			Fs.readFile(path, "utf-8", (error, content) => {
-				if (error) {
-					response.writeHead(500);
-					response.end("interal error.\n");
-				} else {
-					response.writeHead(200, {'Content-Type':req.ctype});
-					response.end(content, "utf-8");
-				}
-			});
-		}
+		Fs.readFile(path, "utf-8", (error, content) => {
+			if (error) {
+				response.writeHead(500);
+				response.end("interal error.\n");
+			} else {
+				response.writeHead(200, {'Content-Type':req.ctype});
+				response.end(content, "utf-8");
+			}
+		});
 	} else {
 		response.writeHead(404);
 		response.end("not found.\n");

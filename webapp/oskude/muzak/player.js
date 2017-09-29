@@ -1,44 +1,39 @@
-<template id="template-oskude-muzak-player">
-	<style>
-	#player {
-		width: 100%;
-	}
-	h1, h2 {
-		padding: 0;
-		margin: 0;
-	}
-	h1 {
-		font-size: 140%;
-	}
-	h2 {
-		font-size: 115%;
-	}
-	h2::before {
-		content: "by ";
-	}
-	</style>
-	<h1 id="title">&lt;title&gt;</h1>
-	<h2 id="artist">&lt;artist&gt;</h2>
-	<audio id="player"></audio>
-	<button id="delete">delete</button>
-	<button id="prev">prev</button>
-	<button id="next">next</button>
-</template>
-
-<script type="module">
 import {api} from "/oskude/muzak/api.js";
 import {edi} from "/oskude/muzak/edi.js";
 
-class OskudeMuzakPlayer extends HTMLElement
+export class OskudeMuzakPlayer extends HTMLElement
 {
 	constructor ()
 	{
 		super();
 
 		const root = this.attachShadow({mode:"open"});
-		const template = document.querySelector("#template-oskude-muzak-player");
-
-		root.appendChild(template.content.cloneNode(true));
+		this.shadowRoot.innerHTML = `
+			<style>
+				#player {
+					width: 100%;
+				}
+				h1, h2 {
+					padding: 0;
+					margin: 0;
+				}
+				h1 {
+					font-size: 140%;
+				}
+				h2 {
+					font-size: 115%;
+				}
+				h2::before {
+					content: "by ";
+				}
+			</style>
+			<h1 id="title">&lt;title&gt;</h1>
+			<h2 id="artist">&lt;artist&gt;</h2>
+			<audio id="player"></audio>
+			<button id="delete">delete</button>
+			<button id="prev">prev</button>
+			<button id="next">next</button>
+		`;
 
 		this.audio = root.querySelector("audio");
 		this.titleElem = root.querySelector("#title");
@@ -108,4 +103,3 @@ window.customElements.define(
 	"oskude-muzak-player",
 	OskudeMuzakPlayer
 );
-</script>

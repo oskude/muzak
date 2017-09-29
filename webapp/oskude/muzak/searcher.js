@@ -1,32 +1,27 @@
-<template id="template-oskude-muzak-searcher">
-	<style>
-		#results::after {
-			content: " Results"
-		}
-	</style>
-	<div id="search-container">
-		<input id="where-title" type="checkbox"/><label>Title</label>
-		<input id="where-artist" type="checkbox"/><label>Artist</label>
-		<input id="query" type="text"/>
-		<button id="search">Search</button>
-		<label id="results">0</label>
-	</div>
-</template>
-
-<script type="module">
 import {api} from "/oskude/muzak/api.js";
 import {edi} from "/oskude/muzak/edi.js";
 
-class OskudeMuzakSearcher extends HTMLElement
+export class OskudeMuzakSearcher extends HTMLElement
 {
 	constructor ()
 	{
 		super();
 
 		const root = this.attachShadow({mode:"open"});
-		const template = document.querySelector("#template-oskude-muzak-searcher");
-
-		root.appendChild(template.content.cloneNode(true));
+		this.shadowRoot.innerHTML = `
+			<style>
+				#results::after {
+					content: " Results"
+				}
+			</style>
+			<div id="search-container">
+				<input id="where-title" type="checkbox"/><label>Title</label>
+				<input id="where-artist" type="checkbox"/><label>Artist</label>
+				<input id="query" type="text"/>
+				<button id="search">Search</button>
+				<label id="results">0</label>
+			</div>
+		`;
 
 		this.queryInput = root.querySelector("#query");
 		this.searchButton = root.querySelector("#search");
@@ -59,4 +54,3 @@ window.customElements.define(
 	"oskude-muzak-searcher",
 	OskudeMuzakSearcher
 );
-</script>

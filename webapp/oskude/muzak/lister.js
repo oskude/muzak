@@ -1,61 +1,50 @@
-<template id="template-oskude-muzak-lister">
-	<style>
-		:host {
-			display: flex;
-			flex-direction: column;
-		}
-		#entry-list-container {
-			overflow-y: auto;
-		}
-		#entry-list-table {
-			border-collapse: collapse;
-			width: 100%;
-		}
-		.entry-row {
-			border-bottom-width: 1px;
-			border-bottom-style: solid;
-			/* TODO: can we set currentColor alpha to 0.5 */
-			border-bottom-color: currentColor;
-		}
-		.selected {
-			filter: invert();
-			backdrop-filter: invert(50%);
-		}
-	</style>
-	<div id="entry-list-container">
-		<table id="entry-list-table" cellpadding="0" cellspacing="0">
-			<tbody id="entry-root"></tbody>
-		</table>
-	<div>
-</template>
-
-<!-- TODO
-if we leave newlines in following template,
-importNode (or something) will literally add newlines as text nodes in dom...
-so, how can we indent our template, but not have trash in node tree?
--->
-<template id="template-oskude-muzak-lister-entry"><tr class="entry-row"><td class="entry-title"></td><td class="entry-artist"></td></tr></template>
-
-<script type="module">
 import {api} from "/oskude/muzak/api.js";
 import {edi} from "/oskude/muzak/edi.js";
 
-class OskudeMuzakLister extends HTMLElement
+export class OskudeMuzakLister extends HTMLElement
 {
 	constructor ()
 	{
 		super();
 
 		const root = this.attachShadow({mode:"open"});
-		const template = document.querySelector("#template-oskude-muzak-lister");
-
-		root.appendChild(template.content.cloneNode(true));
+		this.shadowRoot.innerHTML = `
+			<style>
+				:host {
+					display: flex;
+					flex-direction: column;
+				}
+				#entry-list-container {
+					overflow-y: auto;
+				}
+				#entry-list-table {
+					border-collapse: collapse;
+					width: 100%;
+				}
+				.entry-row {
+					border-bottom-width: 1px;
+					border-bottom-style: solid;
+					/* TODO: can we set currentColor alpha to 0.5 */
+					border-bottom-color: currentColor;
+				}
+				.selected {
+					filter: invert();
+					backdrop-filter: invert(50%);
+				}
+			</style>
+			<div id="entry-list-container">
+				<table id="entry-list-table" cellpadding="0" cellspacing="0">
+					<tbody id="entry-root"></tbody>
+				</table>
+			<div>
+			<template id="template-oskude-muzak-lister-entry"><tr class="entry-row"><td class="entry-title"></td><td class="entry-artist"></td></tr></template>
+		`;
 
 		this.entryRoot = root.querySelector("#entry-root");
 		this.entryListContainer = root.querySelector("#entry-list-container");
 		this.results = root.querySelector("#results");
 
-		this.entryTemplate = document.querySelector("#template-oskude-muzak-lister-entry");
+		this.entryTemplate = root.querySelector("#template-oskude-muzak-lister-entry");
 
 		this.selectedElem = null;
 		this.playList = [];
@@ -182,4 +171,3 @@ window.customElements.define(
 	"oskude-muzak-lister",
 	OskudeMuzakLister
 );
-</script>
